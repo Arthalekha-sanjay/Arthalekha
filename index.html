@@ -1119,8 +1119,8 @@ table.dt {
 }
 </style>
   <!-- PWA -->
-  <link rel="manifest" id="pwa-manifest">
-  <meta name="theme-color" content="#e85d04">
+  <link rel="manifest" href="./manifest.json">
+  <meta name="theme-color" content="#0d0f1a">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Arthalekha">
@@ -7030,51 +7030,14 @@ setTimeout(checkAndHide,3000);
 
 
 <script>
-// ── PWA: Inline Manifest ─────────────────────────────────────
+// ── PWA: Register external service worker ───────────────────
 (function(){
-  const manifest = {
-    name: "Arthalekha GST",
-    short_name: "Arthalekha",
-    description: "GST Accounting & Invoicing for Indian SMBs",
-    start_url: "./",
-    display: "standalone",
-    background_color: "#faf9f6",
-    theme_color: "#e85d04",
-    orientation: "portrait-primary",
-    icons: [
-      { src: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='16' fill='%23e85d04'/><text y='.9em' font-size='65' x='15'>📒</text></svg>", sizes: "192x192", type: "image/svg+xml" },
-      { src: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='16' fill='%23e85d04'/><text y='.9em' font-size='65' x='15'>📒</text></svg>", sizes: "512x512", type: "image/svg+xml" }
-    ]
-  };
-  const blob = new Blob([JSON.stringify(manifest)], {type:'application/json'});
-  document.getElementById('pwa-manifest').href = URL.createObjectURL(blob);
-
-  // Register inline service worker for offline support
   if ('serviceWorker' in navigator) {
-    const swCode = `
-const CACHE = 'arthalekha-v1';
-self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(['/'])));
-  self.skipWaiting();
-});
-self.addEventListener('activate', e => {
-  e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));
-  self.clients.claim();
-});
-self.addEventListener('fetch', e => {
-  if (e.request.method !== 'GET') return;
-  e.respondWith(
-    caches.match(e.request).then(cached => {
-      const fresh = fetch(e.request).then(res => {
-        if(res.ok){ const c=res.clone(); caches.open(CACHE).then(cache=>cache.put(e.request,c)); }
-        return res;
-      }).catch(()=>cached);
-      return cached || fresh;
-    })
-  );
-});`;
-    const swBlob = new Blob([swCode], {type:'text/javascript'});
-    navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(()=>{});
+    window.addEventListener('load', function() {
+      navigator.serviceWorker.register('./sw.js')
+        .then(function(reg){ console.log('[AL] SW registered:', reg.scope); })
+        .catch(function(err){ console.warn('[AL] SW registration failed:', err); });
+    });
   }
 })();
 </script>
